@@ -1,48 +1,51 @@
 
 import pandas as pd
 import requests
-from datetime import datetime, timedelta
 
-def fetch_historical_data(coin_id='btc-bitcoin', days=180):
-    id_map = {
-        'bitcoin': 'btc-bitcoin',
-        'ethereum': 'eth-ethereum',
-        'solana': 'sol-solana',
-        'binancecoin': 'bnb-binance-coin',
-        'ripple': 'xrp-xrp',
-        'cardano': 'ada-cardano',
-        'dogecoin': 'doge-dogecoin',
-        'avalanche-2': 'avax-avalanche',
-        'tron': 'trx-tron',
-        'polkadot': 'dot-polkadot'
+# 👉 HIER DEIN API-KEY EINTRAGEN
+API_KEY = "DEIN_API_KEY_HIER"
+
+def fetch_historical_data(coin_id='BTC', days=180):
+    symbol_map = {
+        'bitcoin': 'BTC',
+        'ethereum': 'ETH',
+        'solana': 'SOL',
+        'binancecoin': 'BNB',
+        'ripple': 'XRP',
+        'cardano': 'ADA',
+        'dogecoin': 'DOGE',
+        'avalanche-2': 'AVAX',
+        'tron': 'TRX',
+        'polkadot': 'DOT'
     }
 
-    if coin_id not in id_map:
-        raise ValueError(f"🛑 Coin-ID '{coin_id}' nicht in Coinpaprika-ID-Liste.")
+    if coin_id not in symbol_map:
+        raise ValueError(f"🛑 Coin-ID '{coin_id}' wird nicht unterstützt.")
 
-    paprika_id = id_map[coin_id]
-    end_date = datetime.utcnow().date()
-    start_date = end_date - timedelta(days=days)
-
-    url = f"https://api.coinpaprika.com/v1/coins/{paprika_id}/ohlcv/historical"
+    symbol = symbol_map[coin_id]
+    market = 'USD'
+    url = f"https://www.alphavantage.co/query"
     params = {
-        'start': start_date.strftime('%Y-%m-%d'),
-        'end': end_date.strftime('%Y-%m-%d')
+        "function": "DIGITAL_CURRENCY_DAILY",
+        "symbol": symbol,
+        "market": market,
+        "apikey": API_KEY
     }
 
     response = requests.get(url, params=params)
-
     if response.status_code != 200:
-        raise ValueError(f"❌ Coinpaprika API-Fehler: {response.status_code} – {response.text}")
+        raise ValueError(f"❌ AlphaVantage API-Fehler: {response.status_code} – {response.text}")
 
     data = response.json()
-    if not data:
-        raise ValueError(f"📉 Keine historischen Daten für {coin_id} erhalten.")
+    if "Time Series (Digital Currency Daily)" not in data:
+        raise ValueError(f"📉 AlphaVantage lieferte keine gültigen Daten für {coin_id} ({symbol}).")
 
-    df = pd.DataFrame(data)
-    df['date'] = pd.to_datetime(df['time_open']).dt.date
-    df.set_index('date', inplace=True)
-    df['price'] = df['close']
+    ts = data["Time Series (Digital Currency Daily)"]
+    df = pd.DataFrame.from_dict(ts, orient='index')
+    df.index = pd.to_datetime(df.index)
+    df = df.sort_index()
+    df['price'] = df['4a. close (USD)'].astype(float)
     df = df[['price']]
+    df = df.tail(days)
 
     return df
