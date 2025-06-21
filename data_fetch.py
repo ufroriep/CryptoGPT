@@ -4,7 +4,6 @@ import requests
 from datetime import datetime
 
 def fetch_historical_data(coin_id='bitcoin', days=180):
-    # Mapping CoinGecko-ID zu Binance Symbol
     symbol_map = {
         'bitcoin': 'BTCUSDT',
         'ethereum': 'ETHUSDT',
@@ -19,15 +18,21 @@ def fetch_historical_data(coin_id='bitcoin', days=180):
     }
 
     if coin_id not in symbol_map:
-        raise ValueError(f"Coin {coin_id} nicht unterstützt für Binance.")
+        raise ValueError(f"🛑 Coin-ID '{coin_id}' wird nicht unterstützt.")
 
     symbol = symbol_map[coin_id]
-    limit = days
     interval = '1d'
+    limit = min(days, 1000)
 
     url = f"https://api.binance.com/api/v3/klines?symbol={symbol}&interval={interval}&limit={limit}"
     response = requests.get(url)
+
+    if response.status_code != 200:
+        raise ValueError(f"❌ Binance API-Fehler: {response.status_code} – {response.text}")
+
     data = response.json()
+    if not data or len(data) == 0:
+        raise ValueError(f"📉 Binance lieferte keine Daten für {coin_id} ({symbol}).")
 
     df = pd.DataFrame(data, columns=[
         'timestamp', 'open', 'high', 'low', 'close', 'volume',
