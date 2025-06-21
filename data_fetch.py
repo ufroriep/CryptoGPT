@@ -1,16 +1,43 @@
-import pandas as pd
-from pycoingecko import CoinGeckoAPI
 
+import pandas as pd
+import requests
+from datetime import datetime
 
 def fetch_historical_data(coin_id='bitcoin', days=180):
-    cg = CoinGeckoAPI()
-    data = cg.get_coin_market_chart_by_id(id=coin_id, vs_currency='usd', days=days)
+    # Mapping CoinGecko-ID zu Binance Symbol
+    symbol_map = {
+        'bitcoin': 'BTCUSDT',
+        'ethereum': 'ETHUSDT',
+        'solana': 'SOLUSDT',
+        'binancecoin': 'BNBUSDT',
+        'ripple': 'XRPUSDT',
+        'cardano': 'ADAUSDT',
+        'dogecoin': 'DOGEUSDT',
+        'avalanche-2': 'AVAXUSDT',
+        'tron': 'TRXUSDT',
+        'polkadot': 'DOTUSDT'
+    }
 
-    prices = pd.DataFrame(data['prices'], columns=['timestamp', 'price'])
-    prices['date'] = pd.to_datetime(prices['timestamp'], unit='ms')
-    prices.set_index('date', inplace=True)
+    if coin_id not in symbol_map:
+        raise ValueError(f"Coin {coin_id} nicht unterstützt für Binance.")
 
-    # Keine dropna(), damit auch heutiger (nicht vollständiger) Tag bleibt
-    prices = prices.resample('1D').mean()
+    symbol = symbol_map[coin_id]
+    limit = days
+    interval = '1d'
 
-    return prices
+    url = f"https://api.binance.com/api/v3/klines?symbol={symbol}&interval={interval}&limit={limit}"
+    response = requests.get(url)
+    data = response.json()
+
+    df = pd.DataFrame(data, columns=[
+        'timestamp', 'open', 'high', 'low', 'close', 'volume',
+        'close_time', 'quote_asset_volume', 'number_of_trades',
+        'taker_buy_base_volume', 'taker_buy_quote_volume', 'ignore'
+    ])
+
+    df['price'] = df['close'].astype(float)
+    df['date'] = pd.to_datetime(df['timestamp'], unit='ms')
+    df.set_index('date', inplace=True)
+    df = df[['price']]
+
+    return df
