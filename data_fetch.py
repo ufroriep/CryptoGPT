@@ -2,7 +2,7 @@
 import pandas as pd
 import requests
 
-API_KEY = "DEIN_API_KEY_HIER"
+API_KEY = "ZTP9UN1GC1GWBUTM"
 
 def fetch_historical_data(coin_id='BTC', days=180):
     symbol_map = {
