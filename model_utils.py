@@ -28,10 +28,15 @@ def add_indicators(df, sentiment_df):
 
 def train_and_predict(df):
     features = ['SMA_10', 'SMA_30', 'RSI', 'Return_5d', 'sentiment']
-    X = df[features]
-    y = df['Label']
-    model = RandomForestClassifier(n_estimators=100, random_state=42)
-    model.fit(X, y)
+    features = ['SMA_10', 'SMA_30', 'RSI', 'Return_5d', 'sentiment']
+    X = df[features].dropna()
+    y = df.loc[X.index, 'Label']
+
+if X.empty or y.empty:
+    raise ValueError("❌ Keine gültigen Trainingsdaten gefunden. Prüfe Indikatoren oder Sentiment.")
+
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X, y)
     df['Signal'] = model.predict_proba(X)[:,1]
     df['Recommendation'] = np.where(df['Signal'] > 0.6, 'BUY', 'HOLD')
     return df
