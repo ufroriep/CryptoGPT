@@ -22,7 +22,7 @@ def add_indicators(df, sentiment_df):
     df['Return_5d'] = df['price'].pct_change(periods=5)
     df['Future_5d'] = df['price'].pct_change(periods=5).shift(-5)
     df['Label'] = (df['Future_5d'] > 0.01).astype(int)
-    df = df.merge(sentiment_df.rename(columns={{'score': 'sentiment'}}), left_index=True, right_index=True, how='left')
+    df = df.merge(sentiment_df.rename(columns={'score': 'sentiment'}), left_index=True, right_index=True, how='left')
     df['sentiment'].fillna(method='ffill', inplace=True)
     return df.dropna()
 
