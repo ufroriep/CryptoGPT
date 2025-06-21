@@ -13,7 +13,7 @@ coin_map = {
     "XRP": "ripple",
     "Cardano": "cardano",
     "Dogecoin": "dogecoin",
-    "Avalanche": "avalanche-2",
+    "Avalanche": "avalanche-2",  # Wichtig!
     "TRON": "tron",
     "Polkadot": "polkadot"
 }
