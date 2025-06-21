@@ -51,10 +51,14 @@ def train_and_predict(df):
 
 def run_model(coin_id):
     df_raw = fetch_historical_data(coin_id, days=180)
+
+    if df_raw is None or df_raw.empty:
+        raise ValueError("📉 Binance lieferte keine Preis-Daten.")
+
     sentiment = fetch_news_sentiment(coin_id)
 
     if sentiment is None or sentiment.empty:
-        # Fallback auf neutrales Sentiment
+        # Fallback: neutrales Sentiment
         df_raw['sentiment'] = 0.0
         df_raw['SMA_10'] = df_raw['price'].rolling(window=10).mean()
         df_raw['SMA_30'] = df_raw['price'].rolling(window=30).mean()
@@ -63,8 +67,16 @@ def run_model(coin_id):
         df_raw['Future_5d'] = df_raw['price'].pct_change(periods=5).shift(-5)
         df_raw['Label'] = (df_raw['Future_5d'] > 0.01).astype(int)
         df = df_raw.dropna()
+
+        if df.empty:
+            raise ValueError("📉 Daten nach Fallback-Verarbeitung leer.")
         return train_and_predict(df)
 
+    df_indicators = add_indicators(df_raw.copy(), sentiment)
+    if df_indicators.empty:
+        raise ValueError("📉 Keine Daten nach add_indicators().")
+    df_signals = train_and_predict(df_indicators.copy())
+    return df_signals
     df_indicators = add_indicators(df_raw.copy(), sentiment)
     df_signals = train_and_predict(df_indicators.copy())
     return df_signals
