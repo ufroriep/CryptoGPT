@@ -2,8 +2,8 @@
 import pandas as pd
 import requests
 
-# 👉 HIER DEIN API-KEY EINTRAGEN
-API_KEY = "DEIN_API_KEY_HIER"
+# 👉 HIER DEIN API-KEY 
+API_KEY = "ZTP9UN1GC1GWBUTM"  # <-- hier dein echter Key
 
 def fetch_historical_data(coin_id='BTC', days=180):
     symbol_map = {
